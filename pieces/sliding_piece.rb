@@ -1,3 +1,5 @@
+require_relative 'piece'
+
 class SlidingPiece < Piece
 
   RANK_FILE_DELTAS = [[0,1],[0,-1],[1,0],[-1,0]]

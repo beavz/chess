@@ -1,4 +1,5 @@
-require './board.rb'
+require_relative 'board'
+require_relative 'player'
 
 class Game
   attr_reader :board
@@ -12,18 +13,18 @@ class Game
   def play
     playing = @white
     @board = Board.new
+  
+    puts "#{@white.name} will play white and #{@black.name} will play black."
 
-    until @board.checkmate?
+    until false # @board.checkmate?
       @board.display
       puts "Check!" if board.in_check?(playing.color)
-
+      
       begin
         move = playing.choose_move
 
-        if move == :long
-          @board.castle(playing.color, :long)
-        elsif move == :short
-          @board.castle(playing.color, :short)
+        if move == :long || move == :short
+          @board.castle(move, playing.color)
         else
           @board.move(*move, playing.color)
         end
@@ -51,10 +52,9 @@ class Game
       rescue NoPieceError
         puts "There is no piece at that position."
         retry
-
-      rescue PromotePawn
-        @board.promote_pawn(playing.color)
       end
+      
+      @board.promote_pawn(playing.color)
 
       playing = ( playing == @white ? @black : @white ) #switches turns
     end

@@ -1,3 +1,5 @@
+require_relative 'piece'
+
 class Pawn < Piece
 
   def display
@@ -21,9 +23,8 @@ class Pawn < Piece
     #regular move
     moves = [[pos[0], pos[1] + dy]] 
     #optional for first move only
-   if (@board.on_board?(move) && @board[move].nil?)
-     moves << [pos[0], pos[1] + (2 * dy)]
-   end 
+    move = [pos[0], pos[1] + (2 * dy)]
+    moves << move if (@board.on_board?(move) && @board[move].nil?)
 
     moves.select { |move| (@board.on_board?(move) && @board[move].nil?) }
   end
@@ -33,12 +34,13 @@ class Pawn < Piece
     captures = []
 
     deltas.each do |dx, dy|
-      captures << [@pos[0] + dx, @pos[1] + dy] 
+      capture = [pos[0] + dx, pos[1] + dy] 
+      if (@board.on_board?(capture) && !@board[capture].nil? && @board[capture].color != color)
+        captures << capture
+      end
     end
-
-    captures.select do |capture| {
-      @board[capture] && @board[capture].color != color
-    }
+    
+    captures
   end
 
 end
