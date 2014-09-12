@@ -1,7 +1,3 @@
-require './chessboard.rb'
-
-
-
 class Player
 
   attr_accessor :color
@@ -58,10 +54,4 @@ class Player
     'abcdefgh'.index(file)
   end
 
-end
-
-class BadInput < StandardError
-end
-
-class Castling < StandardError
 end
