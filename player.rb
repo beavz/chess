@@ -53,3 +53,6 @@ class Player
   end
 
 end
+
+class BadInput < StandardError
+end

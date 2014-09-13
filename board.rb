@@ -6,52 +6,10 @@ class Board
   attr_accessor :white_king, :black_king, :grid
 
   def initialize(duplicate = false)
-    @grid = Array.new(8) {Array.new(8)}
+    @grid = Array.new(8) { Array.new(8) }
     setup unless duplicate
   end
-
-  def setup
-    [ Rook, Knight, Bishop, Queen, King, Knight, Bishop, Rook ].each_with_index do |piece, i|
-      piece.new([i, 0], self, :white)
-      piece.new([i, 7], self, :black)
-    
-    8.times do |i|
-      Pawn.new([i,1], self, :white)
-      Pawn.new([i,6], self, :black)
-    end
-    
-    @white_king = self[4,0]
-    @black_king = self[4,7]
-    @jail = []
-    nil
-  end
-
- def display
-   colors = { 0 => :light_white, 1 => :white }
-   7.downto(0) do |y| #underscore?
-      print " #{y+1} ".colorize(:light_black)
-
-      8.times do |x|
-        if self[[x,y]].nil?
-          print "  ".colorize( :background => colors[(x+y)%2] )
-        else
-          print "#{self[[x,y]].display} ".colorize( :background => colors[(x+y)%2] )
-        end
-      end
-
-      if y == 7
-        @jail.each {|piece| print piece.display if piece.color == :black}
-      elsif y == 0
-        @jail.each {|piece| print piece.display if piece.color == :white}
-      end
-
-      print "\n"
-    end
-
-
-    print "   A B C D E F G H \n".colorize(:light_black)
-  end
-
+  
   def [](pos)
     x,y = pos
     @grid[x][y]
@@ -60,8 +18,88 @@ class Board
   def []=(pos, obj)
     x,y = pos
     @grid[x][y] = obj
+  end
 
+  def setup
+    [ Rook, Knight, Bishop, Queen, King, Knight, Bishop, Rook ].each_with_index do |piece, i|
+      piece.new([i, 0], self, :white)
+      piece.new([i, 7], self, :black)
+    end
+    
+    8.times do |i|
+      Pawn.new([i, 1], self, :white)
+      Pawn.new([i, 6], self, :black)
+    end
+    
+    @white_king = self[[4,0]]
+    @black_king = self[[4,7]]
+    @jail = []
     nil
+  end
+
+ def display
+   colors = { 0 => :light_white, 1 => :white }
+   7.downto(0) do |y| 
+      print " #{y+1} ".colorize(:light_black)
+      8.times do |x|
+        if self[[x,y]].nil?
+          print "  ".colorize( :background => colors[(x+y)%2] )
+        else
+          print "#{self[[x,y]].display} ".colorize( :background => colors[(x+y)%2] )
+        end
+      end
+      if y == 7
+        @jail.each {|piece| print piece.display if piece.color == :black}
+      elsif y == 0
+        @jail.each {|piece| print piece.display if piece.color == :white}
+      end
+      print "\n"
+    end
+    print "   A B C D E F G H \n".colorize(:light_black)
+  end
+  
+  def pieces
+    @grid.flatten.compact
+  end
+
+  def in_check?(color)
+    king_pos = (color == :white ? @white_king.pos : @black_king.pos)
+    
+    pieces.each do |piece|
+      unless piece.color == color
+        return true if piece.moves.include?(king_pos)
+      end
+    end
+    
+    false
+  end
+
+  def color_checkmate?(color)
+    return false if !self.in_check?(color)
+
+    pieces.all? do |piece|
+      piece.color != color || piece.valid_moves.empty?
+    end
+  end
+
+  def checkmate?
+    self.color_checkmate?(:white) || self.color_checkmate?(:black)
+  end
+  
+  def on_board?(pos)
+    (0..7).include?(pos[0]) && (0..7).include?(pos[1])
+  end
+  
+  def dup
+    dup_board = Board.new(true)
+
+    pieces.each do |piece|
+      piece.dup(dup_board)
+    end
+    dup_board.white_king = dup_board[self.white_king.pos]
+    dup_board.black_king = dup_board[self.black_king.pos]
+
+    dup_board
   end
 
   def move(start, fin, color)
@@ -153,57 +191,6 @@ class Board
     
     nil
   end
-
-  def on_board?(pos)
-    (0..7).include?(pos[0]) && (0..7).include?(pos[1])
-  end
-
-  def dup
-    dup_board = Board.new(true)
-
-    @grid.flatten.compact.each do |piece|
-      if piece.class == King
-        if piece.color == :white
-          dup_board.white_king = piece.dup(dup_board)
-        else
-          dup_board.black_king = piece.dup(dup_board)
-        end
-      else
-        piece.dup(dup_board)
-      end
-    end
-
-    dup_board
-  end
-  
-  def pieces
-    @grid.flatten.compact
-  end
-
-  def in_check?(color)
-    king_pos = (color == :white ? @white_king.pos : @black_king.pos)
-    
-    pieces.each do |piece|
-      unless piece.color == color
-        return true if piece.moves.include?(king_pos)
-      end
-    end
-    
-    false
-  end
-
-  def color_checkmate?(color)
-    return false if !self.in_check?(color)
-
-    pieces.all? do |piece|
-      piece.color != color || piece.valid_moves.empty?
-    end
-  end
-
-  def checkmate?
-    self.color_checkmate?(:white) || self.color_checkmate?(:black)
-  end
-
 end
 
 class IllegalMoveError < StandardError
@@ -221,8 +208,6 @@ end
 class NoCastleError < StandardError
 end
 
-class BadInput < StandardError
-end
 
 #alternative display function 
 
