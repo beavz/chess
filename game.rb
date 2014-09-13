@@ -54,7 +54,7 @@ class Game
         retry
       end
       
-      @board.promote_pawn(playing.color)
+      @board.check_for_pawn_promotion(playing.color)
 
       playing = ( playing == @white ? @black : @white ) #switches turns
     end

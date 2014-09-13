@@ -106,111 +106,90 @@ class Board
     nil
   end
 
-  def move(start, end_pos, color)
-
+  def move(start, fin, color)
     if self[start].nil?
       raise NoPieceError
-    end
-
-    if self[start].color != color
+      
+    elsif self[start].color != color
       raise NotYoPieceError
-    end
-
-    if self[start].valid_moves.include?(end_pos)
-      @jail << self[end_pos]
-      self[end_pos] = self[start]
-      self[end_pos].pos = end_pos
-      self[start] = nil
-      if self[end_pos].class == King || self[end_pos].class == Rook
-        self[end_pos].has_moved = true
+      
+    elsif self[start].valid_moves.include?(fin)
+      if self[fin] #move a captured piece to jail
+        @jail << self[fin] 
+        @jail.compact!
+        @jail.sort_by! { |piece| piece.power }
       end
+      
+      self.move!(start, fin) 
+      self[fin].has_moved = true if [King, Rook].include?(self[fin].class)
 
+    elsif self[start].moves.include?(fin)
+      raise MoveToCheckError
+      
     else
-      if self[start].moves.include?(end_pos)
-        raise MoveToCheckError
-      else
-        raise IllegalMoveError
-      end
+      raise IllegalMoveError
     end
-
-    @jail.compact!
-    @jail.sort_by! {|piece| piece.power}
-
+    
     nil
   end
 
-  def move!(start, end_pos)
-
-    if self[start].moves.include?(end_pos)
-      self[end_pos] = self[start]
-      self[end_pos].pos = end_pos
-    end
-
-    nil
+  def move!(start, fin)
+    self[fin], self[start] = self[start], nil
+    self[fin].pos = fin
   end
 
   def castle(side, color)
     raise NoCastleError if in_check?(color) #may not be in check
     
-    raise NoCastleError if self[[king_x,y]].has_moved || #can only be first move for both pieces
-                            self[[rook_x,y]].has_moved
-                            
     y = (color == :white ? 0 : 7)
     king_x = 4
     rook_x = (side == :long ? 0 : 7)
-
-    king_x_new = ( side == :long ? 2 : 6 )
-    rook_x_new = ( side == :long ? 3 : 5 )
+    
+    raise NoCastleError if self[[king_x,y]].has_moved || #can only be first move for both pieces
+                            self[[rook_x,y]].has_moved
 
     in_between_x = ( side == :long ? [1,2,3] : [5,6] ) #all spaces passed through must be empty
-    raise noCastleError unless in_between_x.all? { |x| self.[[x,y]].nil? }
+    raise noCastleError unless in_between_x.all? { |x| self[[x,y]].nil? }
     
-    king_x_path = ( side == :long ? [3, 2] : [5, 6] )
-    king_x_path.each do |x| #king must not pass through check
+    ( side == :long ? [3, 2] : [5, 6] ).each do |passed_x| #king must not pass through check
       temp_board = self.dup
-      temp_board[[x,y]], temp_board[[king_x,y]] = temp_board[[king_x,y]], nil
-      temp_board[[x,y]].pos = [x,y]
-
+      temp_board.move!([king_x,y], [passed_x,y])
       raise NoCastleError if temp_board.in_check?(color)
     end
-
-    #king
-    self[[2,y]], self[[4,y]] = self[[4,y]], nil
-    self[[2,y]].pos = [2,y]
-
-    #rook
-    self[[3,y]], self[[0,y]] = self[[0,y]], nil
-    self[[3,y]].pos = [3,y]
+    
+    new_king_x = ( side == :long ? 2 : 6 )
+    new_rook_x = ( side == :long ? 3 : 5 )
+    
+    self.move!([king_x, y], [new_king_x, y])
+    self.move!([rook_x, y], [new_rook_x, y]) 
   end
 
-  def promote_pawn(color)
+  def check_for_pawn_promotion(color)
     last_rank = (color == :white ? 7 : 0)
     position = nil
     
     8.times do |x|
-      if self[[x,last_rank]].class == Pawn
-        position = [x,last_rank]
+      if self[[x,last_rank]].class == Pawn && self[[x,last_rank]].color == color
+        promote_pawn([x,last_rank])
         break
       end
     end
     
-    if position
-      puts "You must promote your pawn.\n
-          Enter 'Q', 'R', 'B', or 'N' to select a piece."
-      begin
-        piece = gets.chomp.downcase
-
-        new_piece = case piece
-        when 'q' then Queen.new(position, self, color)
-        when 'r' then Rook.new(position, self, color)
-        when 'b' then Bishop.new(position, self, color)
-        when 'n' then Knight.new(position, self, color)
-        else raise BadInput
-        end
-
-      rescue BadInput
+    nil
+  end
+  
+  def promote_pawn(pos)
+    puts "You must promote your pawn. \nEnter 'Q', 'R', 'B', or 'N' to select a piece."
+    pieces = { q: Queen, r: Rook, b: Bishop, n: Knight }
+    
+    while true
+      input = gets.chomp.downcase
+      
+      if pieces[input]
+        pieces[input].new(pos, self, color)
+        break
+      else
         puts "Try again."
-        retry
       end
     end
     
