@@ -16,7 +16,7 @@ class Game
   
     puts "#{@white.name} will play white and #{@black.name} will play black."
 
-    until false # @board.checkmate?
+    until @board.checkmate?
       @board.display
       puts "Check!" if board.in_check?(playing.color)
       

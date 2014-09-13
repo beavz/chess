@@ -8,91 +8,49 @@ class Board
   def initialize(duplicate = false)
     @grid = Array.new(8) {Array.new(8)}
     setup unless duplicate
-    @jail = []
   end
 
   def setup
-
-    @white_king = King.new([4,0], self, :white)
-    @black_king = King.new([4,7], self, :black)
-
-    Queen.new([3,0], self, :white)
-    Queen.new([3,7], self, :black)
-
-    Bishop.new([2,0], self, :white)
-    Bishop.new([5,0], self, :white)
-    Bishop.new([2,7], self, :black)
-    Bishop.new([5,7], self, :black)
-
-    Knight.new([1,0], self, :white)
-    Knight.new([6,0], self, :white)
-    Knight.new([1,7], self, :black)
-    Knight.new([6,7], self, :black)
-
-    Rook.new([0,0], self, :white)
-    Rook.new([7,0], self, :white)
-    Rook.new([0,7], self, :black)
-    Rook.new([7,7], self, :black)
-
+    [ Rook, Knight, Bishop, Queen, King, Knight, Bishop, Rook ].each_with_index do |piece, i|
+      piece.new([i, 0], self, :white)
+      piece.new([i, 7], self, :black)
+    
     8.times do |i|
       Pawn.new([i,1], self, :white)
       Pawn.new([i,6], self, :black)
     end
-
+    
+    @white_king = self[4,0]
+    @black_king = self[4,7]
+    @jail = []
     nil
   end
 
-  # def display
- #      print "   ┌#{"───┬"* (7)}───┐ ".colorize(:light_cyan)
- #      @jail.each {|piece| print piece.display if piece.color == :black}
- #      print "\n"
- #
- #      (0...8).to_a.reverse.each do |y|
- #        print " #{y+1}".colorize(:light_black)
- #        print " │".colorize(:light_cyan)
- #        8.times do |x|
- #          if !self[[x,y]].nil?
- #            print " #{self[[x,y]].display} "
- #          else
- #            print "   "
- #          end
- #          print "│".colorize(:light_cyan)
- #        end
- #        print "\n"
- #        print "   ├#{"───┼" * (7)}───┤\n".colorize(:light_cyan) unless y == 0
- #      end
- #      print "   └#{"───┴"* (7)}───┘ ".colorize(:light_cyan)
- #      @jail.each {|piece| print piece.display if piece.color == :white}
- #      print "\n"
- #      print "     A   B   C   D   E   F   G   H  \n".colorize(:light_black)
- #      nil
- #  end
+ def display
+   colors = { 0 => :light_white, 1 => :white }
+   7.downto(0) do |y| #underscore?
+      print " #{y+1} ".colorize(:light_black)
 
-   def display
-     colors = { 0 => :light_white, 1 => :white }
-     7.downto(0) do |y| #underscore?
-        print " #{y+1} ".colorize(:light_black)
-
-        8.times do |x|
-          if self[[x,y]].nil?
-            print "  ".colorize( :background => colors[(x+y)%2] )
-          else
-            print "#{self[[x,y]].display} ".colorize( :background => colors[(x+y)%2] )
-          end
+      8.times do |x|
+        if self[[x,y]].nil?
+          print "  ".colorize( :background => colors[(x+y)%2] )
+        else
+          print "#{self[[x,y]].display} ".colorize( :background => colors[(x+y)%2] )
         end
-
-        if y == 7
-          @jail.each {|piece| print piece.display if piece.color == :black}
-        elsif y == 0
-          @jail.each {|piece| print piece.display if piece.color == :white}
-        end
-
-        print "\n"
       end
 
+      if y == 7
+        @jail.each {|piece| print piece.display if piece.color == :black}
+      elsif y == 0
+        @jail.each {|piece| print piece.display if piece.color == :white}
+      end
 
-      print "   A B C D E F G H \n".colorize(:light_black)
+      print "\n"
     end
+
+
+    print "   A B C D E F G H \n".colorize(:light_black)
+  end
 
   def [](pos)
     x,y = pos
@@ -237,7 +195,7 @@ class Board
   def color_checkmate?(color)
     return false if !self.in_check?(color)
 
-    pieces.all do |piece|
+    pieces.all? do |piece|
       piece.color != color || piece.valid_moves.empty?
     end
   end
@@ -265,3 +223,31 @@ end
 
 class BadInput < StandardError
 end
+
+#alternative display function 
+
+ # def display
+#      print "   ┌#{"───┬"* (7)}───┐ ".colorize(:light_cyan)
+#      @jail.each {|piece| print piece.display if piece.color == :black}
+#      print "\n"
+#
+#      (0...8).to_a.reverse.each do |y|
+#        print " #{y+1}".colorize(:light_black)
+#        print " │".colorize(:light_cyan)
+#        8.times do |x|
+#          if !self[[x,y]].nil?
+#            print " #{self[[x,y]].display} "
+#          else
+#            print "   "
+#          end
+#          print "│".colorize(:light_cyan)
+#        end
+#        print "\n"
+#        print "   ├#{"───┼" * (7)}───┤\n".colorize(:light_cyan) unless y == 0
+#      end
+#      print "   └#{"───┴"* (7)}───┘ ".colorize(:light_cyan)
+#      @jail.each {|piece| print piece.display if piece.color == :white}
+#      print "\n"
+#      print "     A   B   C   D   E   F   G   H  \n".colorize(:light_black)
+#      nil
+#  end
