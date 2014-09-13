@@ -136,12 +136,6 @@ class Board
     @jail.compact!
     @jail.sort_by! {|piece| piece.power}
 
-    #check for pawn promotion
-    last_rank = (color == :white ? 7 : 0 )
-    if self[end_pos].class == Pawn && end_pos[1] == last_rank
-      raise PromotePawn
-    end
-
     nil
   end
 
@@ -158,7 +152,7 @@ class Board
   def castle(side, color)
     raise NoCastleError if in_check?(color) #may not be in check
     
-    raise NoCastleError if self[[king_x,y]].has_moved || #can only be first move
+    raise NoCastleError if self[[king_x,y]].has_moved || #can only be first move for both pieces
                             self[[rook_x,y]].has_moved
                             
     y = (color == :white ? 0 : 7)
@@ -168,17 +162,10 @@ class Board
     king_x_new = ( side == :long ? 2 : 6 )
     rook_x_new = ( side == :long ? 3 : 5 )
 
+    in_between_x = ( side == :long ? [1,2,3] : [5,6] ) #all spaces passed through must be empty
+    raise noCastleError unless in_between_x.all? { |x| self.[[x,y]].nil? }
+    
     king_x_path = ( side == :long ? [3, 2] : [5, 6] )
-    in_between_x = ( side == :long ? [1,2,3] : [5,6] )
-
-    
-
-    in_between_x.each do |x|
-      raise NoCastleError unless self[[x,y]].nil?
-    end
-
-    
-
     king_x_path.each do |x| #king must not pass through check
       temp_board = self.dup
       temp_board[[x,y]], temp_board[[king_x,y]] = temp_board[[king_x,y]], nil
