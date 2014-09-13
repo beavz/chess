@@ -156,6 +156,11 @@ class Board
   end
 
   def castle(side, color)
+    raise NoCastleError if in_check?(color) #may not be in check
+    
+    raise NoCastleError if self[[king_x,y]].has_moved || #can only be first move
+                            self[[rook_x,y]].has_moved
+                            
     y = (color == :white ? 0 : 7)
     king_x = 4
     rook_x = (side == :long ? 0 : 7)
@@ -166,14 +171,13 @@ class Board
     king_x_path = ( side == :long ? [3, 2] : [5, 6] )
     in_between_x = ( side == :long ? [1,2,3] : [5,6] )
 
-    raise NoCastleError if self[[king_x,y]].has_moved ||
-                            self[[rook_x,y]].has_moved
+    
 
     in_between_x.each do |x|
       raise NoCastleError unless self[[x,y]].nil?
     end
 
-    raise NoCastleError if in_check?(color) #may not be in check
+    
 
     king_x_path.each do |x| #king must not pass through check
       temp_board = self.dup
